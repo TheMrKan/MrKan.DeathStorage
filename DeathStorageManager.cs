@@ -102,8 +102,8 @@ namespace MrKan.DeathStorage
                 if (storage.IsExpired())
                 {
                     storage.Destroy();
+                    s_Storages.RemoveAt(i);
                 }
-                s_Storages.RemoveAt(i);
             }
         }
     }

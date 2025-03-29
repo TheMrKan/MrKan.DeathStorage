@@ -158,18 +158,29 @@ namespace MrKan.DeathStorage
 
         }
 
-        private void SetTempHandsSize(PlayerInventory inventory, out byte originalX, out byte originalY)
+        public void FinalizeStorage()
         {
-            var hands = inventory.items[PlayerInventory.SLOTS];
-            originalX = hands.width;
-            originalY = hands.height;
+            int totalWidth = 0, totalHeight = 0;
+            foreach (var item in Items.items)
+            {
+                int w;
+                int h;
+                if (item.rot % 2 == 0)
+                {
+                    w = item.size_x;
+                    h = item.size_y;
+                }
+                else
+                {
+                    w = item.size_y;
+                    h = item.size_x;
+                }
 
-            hands.resize(250, 250);
-        }
+                totalWidth = Math.Max(totalWidth, item.x + w);
+                totalHeight = Math.Max(totalHeight, item.y + h);
+            }
 
-        private void RestoreOriginalHandsSize(PlayerInventory inventory, byte x, byte y)
-        {
-            inventory.items[PlayerInventory.SLOTS].resize(x, y);
+            Items.resize((byte)totalWidth, (byte)totalHeight);
         }
 
         private void GetClothesAndPages(PlayerClothing cloting, out bool[] clothes, out byte[] pages)

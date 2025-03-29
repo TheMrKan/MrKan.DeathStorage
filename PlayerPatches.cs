@@ -29,37 +29,6 @@ namespace MrKan.DeathStorage
                 __instance.closeStorage();
             }
 
-            if (!Provider.isServer)
-            {
-                return false;
-            }
-
-            var storage = DeathStorageManager.GetStorage(__instance.player.channel.owner.playerID.steamID);
-            if (storage == null)
-            {
-                try
-                {
-                    storage = DeathStorageManager.Create(__instance.player);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogException(ex, "Failed to create DroppedStorage");
-                    return true;
-                }
-
-                Logger.LogError("Existing DroppedStorage not found so the new one was created");
-            }
-
-
-            try
-            {
-                storage.TakeItemsFromInventory(__instance);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogException(ex, "Failed to take items from inventory");
-            }
-
             return false;
         }
 
@@ -92,7 +61,17 @@ namespace MrKan.DeathStorage
 
             try
             {
+                storage.TakeItemsFromInventory(__instance.player.inventory);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(ex, "Failed to take items from inventory");
+            }
+
+            try
+            {
                 storage.TakeClothesFromInventory(__instance);
+                storage.FinalizeStorage();
             }
             catch (Exception ex)
             {
