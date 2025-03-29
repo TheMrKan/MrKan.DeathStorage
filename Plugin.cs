@@ -20,6 +20,7 @@ namespace MrKan.DeathStorage
             DeathStorageManager.Init();
 
             PlayerLife.OnPreDeath += OnPreDeath;
+            PlayerLife.OnRevived_Global += OnRevived;
         }
 
         private void OnPreDeath(PlayerLife life)
@@ -34,9 +35,22 @@ namespace MrKan.DeathStorage
             }
         }
 
+        private void OnRevived(PlayerLife life)
+        {
+            try
+            {
+                DeathStorageManager.GiveStashedItems(life.player);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(ex, "Failed to give stashed items on revive");
+            }
+        }
+
         protected override void Unload()
         {
             PlayerLife.OnPreDeath -= OnPreDeath;
+            PlayerLife.OnRevived_Global -= OnRevived;
 
             Harmony?.UnpatchAll();
             Instance = null;

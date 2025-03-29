@@ -1,6 +1,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using SDG.NetPak;
 using SDG.NetTransport;
@@ -49,13 +50,23 @@ namespace MrKan.DeathStorage
 
             for (byte page = 0; page < PlayerInventory.STORAGE; page++)
             {
-                var pageitems = inventory.items[page];
-                for (byte index = (byte)(pageitems.items.Count - 1); index >= 0; index--)
+                var pageItems = inventory.items.ElementAtOrDefault(page);
+                if (pageItems == null || pageItems.getItemCount() == 0)
                 {
-                    if (!Plugin.Config!.DontLoseOnDeath.Contains(pageitems.items[index].item.id))
+                    continue;
+                }
+
+                for (int index = pageItems.items.Count - 1; index >= 0; index--)
+                {
+                    var item = pageItems.getItem((byte)index);
+                    if (item == null)
                     {
-                        Items.tryAddItem(pageitems.items[index].item);
-                        inventory.removeItem(page, index);
+                        continue;
+                    }
+                    if (!Plugin.Config!.DontLoseOnDeath.Contains(item.item.id))
+                    {
+                        Items.tryAddItem(item.item);
+                        inventory.removeItem(page, (byte)index);
                     }
                 }
             }
@@ -65,93 +76,85 @@ namespace MrKan.DeathStorage
         {
             GetClothesAndPages(clothing, out bool[] clothes, out byte[] availablePages);
 
-            SetTempHandsSize(clothing.player.inventory, out var origX, out var origY);
-            try
+            // backpack
+            if (!clothes[0])
             {
-                // backpack
-                if (!clothes[0])
-                {
-                    MoveItemsFromPage(clothing.player.inventory, PlayerInventory.BACKPACK, availablePages);
+                MoveItemsFromPage(clothing.player.inventory, PlayerInventory.BACKPACK, availablePages);
 
-                    Items.tryAddItem(new Item(clothing.backpack, 1, clothing.backpackQuality, clothing.backpackState));
-                    PropertyInfo property = typeof(HumanClothes).GetProperty("backpackAsset");
-                    property.GetSetMethod(true).Invoke(clothing.thirdClothes, new object?[] { null });
-                    clothing.backpackQuality = 0;
-                    clothing.backpackState = new byte[0];
-                }
-
-                // vest
-                if (!clothes[1])
-                {
-                    MoveItemsFromPage(clothing.player.inventory, PlayerInventory.VEST, availablePages);
-
-                    Items.tryAddItem(new Item(clothing.vest, 1, clothing.vestQuality, clothing.vestState));
-                    PropertyInfo property = typeof(HumanClothes).GetProperty("vestAsset");
-                    property.GetSetMethod(true).Invoke(clothing.thirdClothes, new object?[] { null });
-                    clothing.vestQuality = 0;
-                    clothing.vestState = new byte[0];
-                }
-
-                // shirt
-                if (!clothes[2])
-                {
-                    MoveItemsFromPage(clothing.player.inventory, PlayerInventory.SHIRT, availablePages);
-
-                    Items.tryAddItem(new Item(clothing.shirt, 1, clothing.shirtQuality, clothing.shirtState));
-                    PropertyInfo property = typeof(HumanClothes).GetProperty("shirtAsset");
-                    property.GetSetMethod(true).Invoke(clothing.thirdClothes, new object?[] { null });
-                    clothing.shirtQuality = 0;
-                    clothing.shirtState = new byte[0];
-                }
-
-                // pants
-                if (!clothes[3])
-                {
-                    MoveItemsFromPage(clothing.player.inventory, PlayerInventory.PANTS, availablePages);
-
-                    Items.tryAddItem(new Item(clothing.pants, 1, clothing.pantsQuality, clothing.pantsState));
-                    PropertyInfo property = typeof(HumanClothes).GetProperty("pantsAsset");
-                    property.GetSetMethod(true).Invoke(clothing.thirdClothes, new object?[] { null });
-                    clothing.pantsQuality = 0;
-                    clothing.pantsState = new byte[0];
-                }
-
-                // hat
-                if (!clothes[4])
-                {
-                    Items.tryAddItem(new Item(clothing.hat, 1, clothing.hatQuality, clothing.hatState));
-                    PropertyInfo property = typeof(HumanClothes).GetProperty("hatAsset");
-                    property.GetSetMethod(true).Invoke(clothing.thirdClothes, new object?[] { null });
-                    clothing.hatQuality = 0;
-                    clothing.hatState = new byte[0];
-                }
-
-                // glasses
-                if (!clothes[5])
-                {
-                    Items.tryAddItem(new Item(clothing.glasses, 1, clothing.glassesQuality, clothing.glassesState));
-                    PropertyInfo property = typeof(HumanClothes).GetProperty("glassesAsset");
-                    property.GetSetMethod(true).Invoke(clothing.thirdClothes, new object?[] { null });
-                    clothing.glassesQuality = 0;
-                    clothing.glassesState = new byte[0];
-                }
-
-                // mask
-                if (!clothes[6])
-                {
-                    Items.tryAddItem(new Item(clothing.mask, 1, clothing.maskQuality, clothing.maskState));
-                    PropertyInfo property = typeof(HumanClothes).GetProperty("maskAsset");
-                    property.GetSetMethod(true).Invoke(clothing.thirdClothes, new object?[] { null });
-                    clothing.maskQuality = 0;
-                    clothing.maskState = new byte[0];
-                }
-
-                SendClothingState.InvokeAndLoopback(clothing.GetNetId(), ENetReliability.Reliable, Provider.EnumerateClients_Remote(), (writer) => WriteClothingState(clothing, writer));
+                Items.tryAddItem(new Item(clothing.backpack, 1, clothing.backpackQuality, clothing.backpackState));
+                PropertyInfo property = typeof(HumanClothes).GetProperty("backpackAsset");
+                property.GetSetMethod(true).Invoke(clothing.thirdClothes, new object?[] { null });
+                clothing.backpackQuality = 0;
+                clothing.backpackState = new byte[0];
             }
-            finally
+
+            // vest
+            if (!clothes[1])
             {
-                RestoreOriginalHandsSize(clothing.player.inventory, origX, origY);
+                MoveItemsFromPage(clothing.player.inventory, PlayerInventory.VEST, availablePages);
+
+                Items.tryAddItem(new Item(clothing.vest, 1, clothing.vestQuality, clothing.vestState));
+                PropertyInfo property = typeof(HumanClothes).GetProperty("vestAsset");
+                property.GetSetMethod(true).Invoke(clothing.thirdClothes, new object?[] { null });
+                clothing.vestQuality = 0;
+                clothing.vestState = new byte[0];
             }
+
+            // shirt
+            if (!clothes[2])
+            {
+                MoveItemsFromPage(clothing.player.inventory, PlayerInventory.SHIRT, availablePages);
+
+                Items.tryAddItem(new Item(clothing.shirt, 1, clothing.shirtQuality, clothing.shirtState));
+                PropertyInfo property = typeof(HumanClothes).GetProperty("shirtAsset");
+                property.GetSetMethod(true).Invoke(clothing.thirdClothes, new object?[] { null });
+                clothing.shirtQuality = 0;
+                clothing.shirtState = new byte[0];
+            }
+
+            // pants
+            if (!clothes[3])
+            {
+                MoveItemsFromPage(clothing.player.inventory, PlayerInventory.PANTS, availablePages);
+
+                Items.tryAddItem(new Item(clothing.pants, 1, clothing.pantsQuality, clothing.pantsState));
+                PropertyInfo property = typeof(HumanClothes).GetProperty("pantsAsset");
+                property.GetSetMethod(true).Invoke(clothing.thirdClothes, new object?[] { null });
+                clothing.pantsQuality = 0;
+                clothing.pantsState = new byte[0];
+            }
+
+            // hat
+            if (!clothes[4])
+            {
+                Items.tryAddItem(new Item(clothing.hat, 1, clothing.hatQuality, clothing.hatState));
+                PropertyInfo property = typeof(HumanClothes).GetProperty("hatAsset");
+                property.GetSetMethod(true).Invoke(clothing.thirdClothes, new object?[] { null });
+                clothing.hatQuality = 0;
+                clothing.hatState = new byte[0];
+            }
+
+            // glasses
+            if (!clothes[5])
+            {
+                Items.tryAddItem(new Item(clothing.glasses, 1, clothing.glassesQuality, clothing.glassesState));
+                PropertyInfo property = typeof(HumanClothes).GetProperty("glassesAsset");
+                property.GetSetMethod(true).Invoke(clothing.thirdClothes, new object?[] { null });
+                clothing.glassesQuality = 0;
+                clothing.glassesState = new byte[0];
+            }
+
+            // mask
+            if (!clothes[6])
+            {
+                Items.tryAddItem(new Item(clothing.mask, 1, clothing.maskQuality, clothing.maskState));
+                PropertyInfo property = typeof(HumanClothes).GetProperty("maskAsset");
+                property.GetSetMethod(true).Invoke(clothing.thirdClothes, new object?[] { null });
+                clothing.maskQuality = 0;
+                clothing.maskState = new byte[0];
+            }
+
+            SendClothingState.InvokeAndLoopback(clothing.GetNetId(), ENetReliability.Reliable, Provider.EnumerateClients_Remote(), (writer) => WriteClothingState(clothing, writer));
 
         }
 
@@ -201,13 +204,22 @@ namespace MrKan.DeathStorage
                 var itemJar = pageItems.getItem((byte)index);
                 if (itemJar == null) continue;
 
+                bool found = false;
                 foreach (byte targetPage in availablePages)
                 {
                     var targetItems = inventory.items[targetPage];
                     if (targetItems.tryFindSpace(itemJar.size_x, itemJar.size_y, out byte x, out byte y, out byte rot))
                     {
                         inventory.ReceiveDragItem(page, itemJar.x, itemJar.y, targetPage, x, y, rot);
+                        found = true;
+                        break;
                     }
+                }
+                
+                if (!found)
+                {
+                    DeathStorageManager.StashItem(inventory.player.channel.owner.playerID.steamID.m_SteamID, itemJar.item);
+                    inventory.removeItem(page, (byte)index);
                 }
             }
         }

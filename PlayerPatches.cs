@@ -50,7 +50,15 @@ namespace MrKan.DeathStorage
                 Logger.LogError("Existing DroppedStorage not found so the new one was created");
             }
 
-            storage.TakeItemsFromInventory(__instance);
+
+            try
+            {
+                storage.TakeItemsFromInventory(__instance);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(ex, "Failed to take items from inventory");
+            }
 
             return false;
         }
@@ -82,7 +90,14 @@ namespace MrKan.DeathStorage
                 Logger.LogError("Existing DroppedStorage not found so the new one was created");
             }
 
-            storage.TakeClothesFromInventory(__instance);
+            try
+            {
+                storage.TakeClothesFromInventory(__instance);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(ex, "Failed to take clothes from inventory");
+            }
 
             return false;
         }
