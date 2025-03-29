@@ -11,34 +11,30 @@ namespace MrKan.DeathStorage
 {
     public static class DeathStorageManager
     {
-        private static ItemBarricadeAsset? s_Asset;
         private static List<DroppedStorage> s_Storages = new();
         private static Dictionary<ulong, List<Item>> s_StashedItems = new();
         public static void Init()
         {
-            s_Asset = Assets.find(EAssetType.ITEM, Plugin.Config!.BarricadeId) as ItemBarricadeAsset;
-            if (s_Asset == null)
-            {
-                Logger.LogWarning($"Failed to find barricade asset {Plugin.Config!.BarricadeId}.");
-            }
-
             Plugin.Instance!.StartCoroutine(StorageLifetimeChecker());
         }
 
         public static DroppedStorage Create(Player player)
         {
             var rot = player.transform.rotation.eulerAngles.y;
-            return Create(player.channel.owner.playerID.steamID, player.transform.position, rot);
+            var pos = player.transform.position;
+            pos.y += Plugin.Config!.BarricadePositionOffset;
+            return Create(player.channel.owner.playerID.steamID, pos, rot);
         }
 
         public static DroppedStorage Create(CSteamID owner, Vector3 position, float rotation)
         {
-            if (s_Asset == null)
+            var asset = Assets.find(EAssetType.ITEM, Plugin.Config!.BarricadeId) as ItemBarricadeAsset;
+            if (asset == null)
             {
                 throw new Exception("Barricade asset not found");
             }
 
-            var barricade = new Barricade(s_Asset);
+            var barricade = new Barricade(asset);
             var transform = BarricadeManager.dropBarricade(barricade, null, position, 0, rotation, 0, 0, 0);
             var drop = BarricadeManager.FindBarricadeByRootTransform(transform);
 

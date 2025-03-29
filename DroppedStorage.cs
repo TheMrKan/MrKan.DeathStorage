@@ -34,7 +34,7 @@ namespace MrKan.DeathStorage
             }
 
             Items = storage.items;
-            Items.resize(250, 250);
+            Items.resize(15, 250);
         }
 
         public void TakeItemsFromInventory(PlayerInventory inventory)
